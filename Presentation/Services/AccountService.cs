@@ -5,10 +5,11 @@ using Presentation.Data;
 
 namespace Presentation.Services;
 
-public class AccountService(UserManager<IdentityUser> userManager, IConfiguration config) : IAccountSerivce
+public class AccountService(UserManager<IdentityUser> userManager) : IAccountSerivce
 {
     private readonly UserManager<IdentityUser> _userManager = userManager;
-    private readonly IConfiguration _config = config;
+
+    private const string VerificationUrl = "https://dennis-verificationservice-d0fjb4c5bsfgfcat.swedencentral-01.azurewebsites.net/api/verification/send";
 
     public async Task<RegisterResult> RegisterAsync(RegisterModel model)
     {
@@ -31,15 +32,7 @@ public class AccountService(UserManager<IdentityUser> userManager, IConfiguratio
             };
         }
 
-        var verificationUrl = _config["VerificationService:BaseUrl"];
-        if (string.IsNullOrWhiteSpace(verificationUrl))
-        {
-            return new RegisterResult<string>
-            {
-                Success = false,
-                Error = "Verification service URL is not configured"
-            };
-        }
+        
 
         try
         {
@@ -48,7 +41,7 @@ public class AccountService(UserManager<IdentityUser> userManager, IConfiguratio
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             using var client = new HttpClient();
-            var response = await client.PostAsync(verificationUrl, content);
+            var response = await client.PostAsync(VerificationUrl, content);
 
             if (!response.IsSuccessStatusCode)
             {
